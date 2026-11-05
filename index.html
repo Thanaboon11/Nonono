@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ปฏิทิน</title>
+  
+  <!-- ตั้งค่าให้ติดตั้งเป็น App บนหน้าจอมือถือแบบเต็มจอ -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#2563eb">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+    body {
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .calendar-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 20px;
+      padding: 24px 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .month-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .nav-btn {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: #334155;
+    }
+    .nav-btn:active {
+      background: #e2e8f0;
+    }
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.95rem;
+      color: #334155;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .day-cell.other-month {
+      color: #cbd5e1;
+    }
+    .day-cell.today {
+      background: #e0e7ff;
+      color: #2563eb;
+      font-weight: 700;
+    }
+    .day-cell.selected {
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 700;
+    }
+    .footer-action {
+      margin-top: 24px;
+      text-align: center;
+    }
+    .today-btn {
+      background: #f1f5f9;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #475569;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calendar-card">
+    <div class="header">
+      <button class="nav-btn" id="prev-btn">&#9664;</button>
+      <div class="month-title" id="month-year-label"></div>
+      <button class="nav-btn" id="next-btn">&#9654;</button>
+    </div>
+
+    <div class="weekdays">
+      <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
+    </div>
+
+    <div class="days-grid" id="days-container"></div>
+
+    <div class="footer-action">
+      <button class="today-btn" id="today-btn">กลับมาวันนี้</button>
+    </div>
+  </div>
+
+  <script>
+    const thaiMonths = [
+      "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    ];
+
+    let currentDate = new Date();
+    let selectedDate = new Date();
+
+    const monthYearLabel = document.getElementById("month-year-label");
+    const daysContainer = document.getElementById("days-container");
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      // แสดงเดือนและปี พ.ศ.
+      monthYearLabel.textContent = `${thaiMonths[month]} ${year + 543}`;
+      daysContainer.innerHTML = "";
+
+      const firstDayOfMonth = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const prevMonthDays = new Date(year, month, 0).getDate();
+
+      // วันของเดือนก่อนหน้า (เติมช่องว่างด้านหน้า)
+      for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+        const cell = document.createElement("div");
+        cell.className = "day-cell other-month";
+        cell.textContent = prevMonthDays - i;
+        daysContainer.appendChild(cell);
+      }
+
+      // วันของเดือนปัจจุบัน
+      const realToday = new Date();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
+        cell.textContent = day;
+
+        const isToday = (day === realToday.getDate() && month === realToday.getMonth() && year === realToday.getFullYear());
+        const isSelected = (day === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear());
+
+        if (isSelected) {
+          cell.classList.add("selected");
+        } else if (isToday) {
+          cell.classList.add("today");
+        }
+
+        cell.addEventListener("click", () => {
+          selectedDate = new Date(year, month, day);
+          renderCalendar();
+        });
+
+        daysContainer.appendChild(cell);
+      }
+
+      // วันของเดือนถัดไป (เติมช่องว่างด้านหลังให้ครบสัปดาห์)
+      const totalCells = firstDayOfMonth + daysInMonth;
+      const remainingCells = (7 - (totalCells % 7)) % 7;
+      for (let i = 1; i <= remainingCells; i++) {
+        const cell = document.createElement("div");
+        cell.className = "day-cell other-month";
+        cell.textContent = i;
+        daysContainer.appendChild(cell);
+      }
+    }
+
+    // ปุ่มเลื่อนเดือน
+    document.getElementById("prev-btn").addEventListener("click", () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    document.getElementById("next-btn").addEventListener("click", () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    document.getElementById("today-btn").addEventListener("click", () => {
+      currentDate = new Date();
+      selectedDate = new Date();
+      renderCalendar();
+    });
+
+    // รองรับการปัดหน้าจอ (Swipe Left/Right) บนมือถือเพื่อเลื่อนเดือน
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 60) {
+        currentDate.setMonth(currentDate.getMonth() + 1); // ปัดซ้าย -> เดือนถัดไป
+        renderCalendar();
+      } else if (touchEndX - touchStartX > 60) {
+        currentDate.setMonth(currentDate.getMonth() - 1); // ปัดขวา -> เดือนก่อนหน้า
+        renderCalendar();
+      }
+    });
+
+    renderCalendar();
+  </script>
+</body>
+</html>
